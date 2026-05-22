@@ -149,7 +149,8 @@ class TestCreateBook:
         assert response.status_code == 201
         assert data["title"] == "The Mythical Man-Month"
         assert data["author"] == "Frederick Brooks"
-        assert data["isbn"] == "978-0201633610"
+        # ISBN is normalized (hyphens removed)
+        assert data["isbn"] == "9780201633610"
         assert data["year"] == 1975
 
     def test_creates_book_with_optional_fields_null(
@@ -206,6 +207,19 @@ class TestCreateBook:
 
         assert second_response.status_code == 409
         assert "already exists" in second_response.json()["detail"].lower()
+
+    def test_rejects_invalid_isbn_format(self, client: TestClient) -> None:
+        """Creating a book with invalid ISBN must return 422."""
+        payload = {
+            "title": "Invalid ISBN Book",
+            "author": "Author",
+            "isbn": "123-456-789",  # Invalid: only 9 chars
+        }
+
+        response = client.post("/books/", json=payload)
+
+        assert response.status_code == 422
+        assert "value_error" in response.json()["detail"][0]["type"].lower()
 
 
 class TestDeleteBook:
@@ -264,7 +278,7 @@ class TestUpdateBook:
         payload = {
             "title": "New Title",
             "author": "New Author",
-            "isbn": "123-456-789",
+            "isbn": "978-0134957593",
             "year": 2024,
         }
         response = client.put(f"/books/{book_id}", json=payload)
@@ -273,7 +287,8 @@ class TestUpdateBook:
         assert response.status_code == 200
         assert data["title"] == "New Title"
         assert data["author"] == "New Author"
-        assert data["isbn"] == "123-456-789"
+        # ISBN normalized (hyphens removed)
+        assert data["isbn"] == "9780134957593"
         assert data["year"] == 2024
 
     def test_returns_404_for_nonexistent_book_update(
@@ -379,7 +394,7 @@ class TestUpdateBook:
         payload = {
             "title": "Updated Title",
             "author": "Updated Author",
-            "isbn": "978-2222222222",
+            "isbn": "978-0596006303",
             "year": 2026,
         }
         client.put(f"/books/{book_id}", json=payload)
@@ -390,6 +405,6 @@ class TestUpdateBook:
 
         assert data["title"] == "Updated Title"
         assert data["author"] == "Updated Author"
-        assert data["isbn"] == "978-2222222222"
+        # ISBN normalized (hyphens removed)
+        assert data["isbn"] == "9780596006303"
         assert data["year"] == 2026
-

@@ -1,11 +1,50 @@
 """Book service – business logic and Pydantic DTO conversion."""
 
+import re
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from book.entity import BookEntity
 from book.repository import BookRepository
+
+
+def validate_isbn(isbn: str | None) -> str | None:
+    """
+    Validate ISBN format.
+
+    Accepts ISBN-13 (13 digits, starting with 978 or 979) or
+    ISBN-10 (10 digits). Returns the ISBN if valid, raises ValueError
+    if invalid format.
+    """
+    if isbn is None or isbn == "":
+        return None
+
+    # Remove common separators (hyphens, spaces)
+    clean_isbn = isbn.replace("-", "").replace(" ", "").strip()
+
+    # ISBN-13: 13 digits, must start with 978 or 979
+    if len(clean_isbn) == 13:
+        if not re.match(r"^(978|979)\d{10}$", clean_isbn):
+            msg = (
+                f"Invalid ISBN-13 format: {isbn}. "
+                "Must be 13 digits starting with 978 or 979"
+            )
+            raise ValueError(msg)
+        return clean_isbn
+
+    # ISBN-10: 10 digits or 9 digits + X
+    if len(clean_isbn) == 10:
+        if not re.match(r"^\d{9}[\dX]$", clean_isbn.upper()):
+            msg = (
+                f"Invalid ISBN-10 format: {isbn}. "
+                "Must be 10 digits (last can be X)"
+            )
+            raise ValueError(msg)
+        return clean_isbn.upper()
+
+    msg = f"Invalid ISBN format: {isbn}. Must be 10 or 13 digits"
+    raise ValueError(msg)
 
 
 class BookDTO(BaseModel):
@@ -29,6 +68,12 @@ class BookCreateRequest(BaseModel):
     isbn: str | None = None
     year: int | None = None
 
+    @field_validator("isbn", mode="before")
+    @classmethod
+    def validate_isbn_field(cls, v: str | None) -> str | None:
+        """Validate ISBN format when provided."""
+        return validate_isbn(v)
+
 
 class BookUpdateRequest(BaseModel):
     """Request body for updating an existing book."""
@@ -37,6 +82,12 @@ class BookUpdateRequest(BaseModel):
     author: str
     isbn: str | None = None
     year: int | None = None
+
+    @field_validator("isbn", mode="before")
+    @classmethod
+    def validate_isbn_field(cls, v: str | None) -> str | None:
+        """Validate ISBN format when provided."""
+        return validate_isbn(v)
 
 
 class BookService:
