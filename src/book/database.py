@@ -30,3 +30,9 @@ def get_session() -> Generator[Session, None, None]:
 def create_tables() -> None:
     """Create all tables registered with Base if they do not yet exist."""
     Base.metadata.create_all(bind=engine)
+
+
+def reset_tables() -> None:
+    """Drop all tables and recreate them from scratch."""
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)

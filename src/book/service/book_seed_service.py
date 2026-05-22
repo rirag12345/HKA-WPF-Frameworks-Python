@@ -33,4 +33,3 @@ class BookSeedService:
         ]
         self._repository.add_many(books)
         return amount
-

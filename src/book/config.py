@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     database_url: str = f"sqlite:///{(_project_root / 'books.db').as_posix()}"
     app_title: str = "FastAPI Book Management"
     app_version: str = "0.1.0"
+    # Set to true to drop and recreate all tables on every startup.
+    # Useful during development to start with a clean state.
+    db_reset: bool = True
 
 
 # Module-level singleton – import this instance everywhere
