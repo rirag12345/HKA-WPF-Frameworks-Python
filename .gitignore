@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+/certs/key.pem
+/out/production/HKA-WPF-Frameworks-Python/main/book/entity/book.py
+/out/production/HKA-WPF-Frameworks-Python/main/book/repository/book_repository.py
+/out/production/HKA-WPF-Frameworks-Python/main/book/router/book_router.py
+/out/production/HKA-WPF-Frameworks-Python/main/book/service/book_service.py
+/out/production/HKA-WPF-Frameworks-Python/main/book/main.py
+/books.db
+/uv.lock

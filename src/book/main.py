@@ -1,5 +1,7 @@
 """FastAPI application factory and entry point."""
 
+from pathlib import Path
+
 import uvicorn
 from fastapi import FastAPI
 from loguru import logger
@@ -50,14 +52,35 @@ app = create_app()
 
 def main() -> None:
     """Start the uvicorn ASGI server with hot-reload enabled for development."""
+    # Check for SSL certificates
+    project_root = Path(__file__).resolve().parents[2]
+    cert_path = project_root / "certs" / "cert.pem"
+    key_path = project_root / "certs" / "key.pem"
+
+    ssl_keyfile: str | None = None
+    ssl_certfile: str | None = None
+    protocol = "http"
+
+    if cert_path.exists() and key_path.exists():
+        ssl_keyfile = str(key_path)
+        ssl_certfile = str(cert_path)
+        protocol = "https"
+        logger.info("SSL certificates found. Starting with TLS/HTTPS.")
+    else:
+        msg = "SSL certificates required but not found at certs/cert.pem or certs/key.pem"
+        raise FileNotFoundError(msg)
+
     logger.info(
-        "Starting FastAPI Book Management server on http://127.0.0.1:8000"
+        "Starting FastAPI Book Management server on {}://127.0.0.1:8000",
+        protocol,
     )
     uvicorn.run(
         "book.main:app",
         host="127.0.0.1",
         port=8000,
         reload=True,
+        ssl_keyfile=ssl_keyfile,
+        ssl_certfile=ssl_certfile,
     )
 
 
