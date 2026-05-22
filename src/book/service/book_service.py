@@ -32,5 +32,3 @@ class BookService:
         """Retrieve every book and return as a list of DTOs."""
         books: list[BookEntity] = self._repository.get_all()
         return [BookDTO.model_validate(book) for book in books]
-
-

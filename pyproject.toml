@@ -11,6 +11,7 @@ dependencies = [
     "pydantic==2.13.4",
     "pydantic-settings==2.14.1",
     "loguru>=0.7.3",
+    "faker>=37.1.0",
 ]
 
 [project.scripts]

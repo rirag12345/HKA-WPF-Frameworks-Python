@@ -1,5 +1,7 @@
 """Application configuration loaded via pydantic-settings."""
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
 
 
@@ -10,7 +12,8 @@ class Settings(BaseSettings):
     Values can be overridden via environment variables.
     """
 
-    database_url: str = "sqlite:///./books.db"
+    _project_root = Path(__file__).resolve().parents[2]
+    database_url: str = f"sqlite:///{(_project_root / 'books.db').as_posix()}"
     app_title: str = "FastAPI Book Management"
     app_version: str = "0.1.0"
 

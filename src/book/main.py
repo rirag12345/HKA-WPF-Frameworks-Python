@@ -5,8 +5,23 @@ from fastapi import FastAPI
 from loguru import logger
 
 from book.config import settings
-from book.database import create_tables
+from book.database import SessionLocal, create_tables
+from book.repository import BookRepository
 from book.router import router
+from book.service import BookSeedService
+
+
+def seed_startup_books() -> None:
+    """Seed demo books once on startup when the database is empty."""
+    with SessionLocal() as session:
+        inserted = BookSeedService(BookRepository(session)).seed_if_empty(
+            amount=20
+        )
+
+    if inserted > 0:
+        logger.info("Seeded {} demo books with Faker.", inserted)
+    else:
+        logger.info("Skipped startup seeding because books already exist.")
 
 
 def create_app() -> FastAPI:
@@ -24,6 +39,8 @@ def create_app() -> FastAPI:
     # Create database tables after all entities are imported
     create_tables()
     logger.info("Database tables created / verified.")
+
+    seed_startup_books()
 
     return application
 
@@ -46,4 +63,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
