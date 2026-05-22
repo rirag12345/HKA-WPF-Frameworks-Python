@@ -73,3 +73,21 @@ def get_book(
         return service.get_book(book_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.delete(
+    "/{book_id}",
+    summary="Delete a book by id",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Delete a book by its UUID. Returns 204 if deleted.",
+    responses={404: {"description": "Book not found"}},
+)
+def delete_book(
+    book_id: UUID,
+    service: Annotated[BookService, Depends(get_book_service)],
+) -> None:
+    """Delete a book by its UUID and return no content."""
+    try:
+        service.delete_book(book_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e

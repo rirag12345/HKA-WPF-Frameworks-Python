@@ -50,3 +50,20 @@ class BookRepository:
             .first()
             is not None
         )
+
+    def delete_by_id(self, book_id: UUID) -> bool:
+        """
+        Delete a book by its id.
+
+        Returns True if a book was deleted, False if not found.
+        """
+        book = (
+            self._session.query(BookEntity)
+            .filter(BookEntity.id == book_id)
+            .first()
+        )
+        if book is None:
+            return False
+        self._session.delete(book)
+        self._session.commit()
+        return True

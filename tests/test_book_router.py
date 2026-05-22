@@ -207,3 +207,46 @@ class TestCreateBook:
         assert second_response.status_code == 409
         assert "already exists" in second_response.json()["detail"].lower()
 
+
+class TestDeleteBook:
+    """Tests for the DELETE /books/{book_id} endpoint."""
+
+    def test_deletes_book_successfully(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Deleting an existing book by UUID must return 204 No Content."""
+        book_id = _insert_book(db_session, "Test Deletion", "Author")
+
+        response = client.delete(f"/books/{book_id}")
+
+        assert response.status_code == 204
+        assert response.content == b""
+
+    def test_returns_404_for_nonexistent_book_delete(
+        self, client: TestClient
+    ) -> None:
+        """Deleting a non-existent book by UUID must return 404."""
+        fake_id = UUID("12345678-1234-5678-1234-567812345678")
+
+        response = client.delete(f"/books/{fake_id}")
+
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"].lower()
+
+    def test_book_is_removed_from_database(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """After deletion, the book should no longer exist in the database."""
+        book_id = _insert_book(db_session, "Remove Me", "Author")
+
+        # Verify it exists
+        get_response = client.get(f"/books/{book_id}")
+        assert get_response.status_code == 200
+
+        # Delete it
+        delete_response = client.delete(f"/books/{book_id}")
+        assert delete_response.status_code == 204
+
+        # Verify it's gone
+        get_after_delete = client.get(f"/books/{book_id}")
+        assert get_after_delete.status_code == 404

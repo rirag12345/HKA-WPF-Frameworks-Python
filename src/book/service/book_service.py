@@ -73,3 +73,14 @@ class BookService:
         )
         self._repository.add(book)
         return BookDTO.model_validate(book)
+
+    def delete_book(self, book_id: UUID) -> None:
+        """
+        Delete a book by its id.
+
+        Raises ValueError if the book does not exist.
+        """
+        deleted = self._repository.delete_by_id(book_id)
+        if not deleted:
+            msg = f"Book with id {book_id} not found"
+            raise ValueError(msg)
