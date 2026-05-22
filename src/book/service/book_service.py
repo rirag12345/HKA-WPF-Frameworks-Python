@@ -32,3 +32,15 @@ class BookService:
         """Retrieve every book and return as a list of DTOs."""
         books: list[BookEntity] = self._repository.get_all()
         return [BookDTO.model_validate(book) for book in books]
+
+    def get_book(self, book_id: UUID) -> BookDTO:
+        """
+        Retrieve a single book by id and return as DTO.
+
+        Raises ValueError if the book does not exist.
+        """
+        book = self._repository.get_by_id(book_id)
+        if book is None:
+            msg = f"Book with id {book_id} not found"
+            raise ValueError(msg)
+        return BookDTO.model_validate(book)
