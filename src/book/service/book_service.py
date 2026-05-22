@@ -21,6 +21,15 @@ class BookDTO(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class BookCreateRequest(BaseModel):
+    """Request body for creating a new book."""
+
+    title: str
+    author: str
+    isbn: str | None = None
+    year: int | None = None
+
+
 class BookService:
     """Orchestrates book-related use cases and converts entities to DTOs."""
 
@@ -43,4 +52,15 @@ class BookService:
         if book is None:
             msg = f"Book with id {book_id} not found"
             raise ValueError(msg)
+        return BookDTO.model_validate(book)
+
+    def create_book(self, request: BookCreateRequest) -> BookDTO:
+        """Create and persist a new book, then return it as DTO."""
+        book = BookEntity(
+            title=request.title,
+            author=request.author,
+            isbn=request.isbn,
+            year=request.year,
+        )
+        self._repository.add(book)
         return BookDTO.model_validate(book)

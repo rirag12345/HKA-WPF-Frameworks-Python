@@ -26,6 +26,11 @@ class BookRepository:
             .first()
         )
 
+    def add(self, book: BookEntity) -> None:
+        """Persist a single book and commit the transaction."""
+        self._session.add(book)
+        self._session.commit()
+
     def count(self) -> int:
         """Return the total number of stored books."""
         return self._session.query(BookEntity).count()

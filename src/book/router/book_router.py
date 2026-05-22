@@ -3,12 +3,12 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from book.database import get_session
 from book.repository import BookRepository
-from book.service import BookDTO, BookService
+from book.service import BookCreateRequest, BookDTO, BookService
 
 router = APIRouter(prefix="/books", tags=["Books"])
 
@@ -23,6 +23,7 @@ def get_book_service(
 @router.get(
     "/",
     summary="List all books",
+    status_code=status.HTTP_200_OK,
     description=(
         "Returns a list of every book stored in the database. "
         "An empty list is returned when no books exist yet."
@@ -35,9 +36,25 @@ def get_all_books(
     return service.get_all_books()
 
 
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new book",
+    description="Create and persist a new book record in the database.",
+    responses={201: {"description": "Book created successfully"}},
+)
+def create_book(
+    request: BookCreateRequest,
+    service: Annotated[BookService, Depends(get_book_service)],
+) -> BookDTO:
+    """Create a new book and return the created record with its generated id."""
+    return service.create_book(request)
+
+
 @router.get(
     "/{book_id}",
     summary="Retrieve a single book by id",
+    status_code=status.HTTP_200_OK,
     description="Returns the book with the given UUID, or 404 if not found.",
     responses={404: {"description": "Book not found"}},
 )

@@ -113,3 +113,74 @@ class TestGetBook:
         assert "author" in book
         assert "isbn" in book
         assert "year" in book
+
+
+class TestCreateBook:
+    """Tests for the POST /books/ endpoint."""
+
+    def test_creates_book_successfully(self, client: TestClient) -> None:
+        """Creating a book with required fields must return 201."""
+        payload = {
+            "title": "Clean Architecture",
+            "author": "Robert C. Martin",
+        }
+
+        response = client.post("/books/", json=payload)
+        data = response.json()
+
+        assert response.status_code == 201
+        assert data["title"] == "Clean Architecture"
+        assert data["author"] == "Robert C. Martin"
+        assert "id" in data
+        assert UUID(data["id"])  # Verify it's a valid UUID
+
+    def test_creates_book_with_all_fields(self, client: TestClient) -> None:
+        """Creating a book with all fields must persist them."""
+        payload = {
+            "title": "The Mythical Man-Month",
+            "author": "Frederick Brooks",
+            "isbn": "978-0201633610",
+            "year": 1975,
+        }
+
+        response = client.post("/books/", json=payload)
+        data = response.json()
+
+        assert response.status_code == 201
+        assert data["title"] == "The Mythical Man-Month"
+        assert data["author"] == "Frederick Brooks"
+        assert data["isbn"] == "978-0201633610"
+        assert data["year"] == 1975
+
+    def test_creates_book_with_optional_fields_null(
+        self, client: TestClient
+    ) -> None:
+        """Creating a book without optional fields must set them to null."""
+        payload = {
+            "title": "Working Effectively with Legacy Code",
+            "author": "Michael Feathers",
+        }
+
+        response = client.post("/books/", json=payload)
+        data = response.json()
+
+        assert response.status_code == 201
+        assert data["isbn"] is None
+        assert data["year"] is None
+
+    def test_persists_book_to_database(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """A book created via POST must appear in subsequent GET requests."""
+        payload = {
+            "title": "Code Complete",
+            "author": "Steve McConnell",
+        }
+
+        response = client.post("/books/", json=payload)
+        created_id = response.json()["id"]
+
+        # Fetch the created book via GET
+        get_response = client.get(f"/books/{created_id}")
+        assert get_response.status_code == 200
+        assert get_response.json()["title"] == "Code Complete"
