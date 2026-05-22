@@ -39,3 +39,14 @@ class BookRepository:
         """Persist multiple books in one transaction."""
         self._session.add_all(books)
         self._session.commit()
+
+    def exists_by_isbn(self, isbn: str) -> bool:
+        """Check if a book with the given ISBN already exists."""
+        if isbn is None:
+            return False
+        return (
+            self._session.query(BookEntity)
+            .filter(BookEntity.isbn == isbn)
+            .first()
+            is not None
+        )

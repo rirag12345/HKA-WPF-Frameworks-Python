@@ -184,3 +184,26 @@ class TestCreateBook:
         get_response = client.get(f"/books/{created_id}")
         assert get_response.status_code == 200
         assert get_response.json()["title"] == "Code Complete"
+
+    def test_rejects_duplicate_isbn(self, client: TestClient) -> None:
+        """Creating a book with a duplicate ISBN must return 409 Conflict."""
+        # Create first book with ISBN
+        first_payload = {
+            "title": "Software Architecture",
+            "author": "Neal Ford",
+            "isbn": "978-0134494167",
+        }
+        first_response = client.post("/books/", json=first_payload)
+        assert first_response.status_code == 201
+
+        # Try to create another book with the same ISBN
+        second_payload = {
+            "title": "Different Title",
+            "author": "Different Author",
+            "isbn": "978-0134494167",
+        }
+        second_response = client.post("/books/", json=second_payload)
+
+        assert second_response.status_code == 409
+        assert "already exists" in second_response.json()["detail"].lower()
+

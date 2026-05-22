@@ -41,14 +41,20 @@ def get_all_books(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new book",
     description="Create and persist a new book record in the database.",
-    responses={201: {"description": "Book created successfully"}},
+    responses={
+        201: {"description": "Book created successfully"},
+        409: {"description": "A book with this ISBN already exists"},
+    },
 )
 def create_book(
     request: BookCreateRequest,
     service: Annotated[BookService, Depends(get_book_service)],
 ) -> BookDTO:
     """Create a new book and return the created record with its generated id."""
-    return service.create_book(request)
+    try:
+        return service.create_book(request)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
 
 @router.get(

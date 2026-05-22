@@ -55,7 +55,16 @@ class BookService:
         return BookDTO.model_validate(book)
 
     def create_book(self, request: BookCreateRequest) -> BookDTO:
-        """Create and persist a new book, then return it as DTO."""
+        """
+        Create and persist a new book, then return it as DTO.
+
+        Raises ValueError if a book with the same ISBN already exists.
+        """
+        # Check for duplicate ISBN if provided
+        if request.isbn and self._repository.exists_by_isbn(request.isbn):
+            msg = f"A book with ISBN {request.isbn} already exists"
+            raise ValueError(msg)
+
         book = BookEntity(
             title=request.title,
             author=request.author,
