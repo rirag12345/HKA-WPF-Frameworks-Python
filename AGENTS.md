@@ -11,11 +11,18 @@ Das Projekt nutzt ein Source-Layout (`src/book/`) und folgt einer strikten Schic
 * **Kapselung (Facade-Pattern)**: Jede Schicht (`entity/`, `repository/`, `service/`, `router/`) MUSS eine `__init__.py` Datei besitzen. Nutze dort zwingend die `__all__ = [...]` Variable, um nur die Klassen nach außen zu exportieren, die Teil der öffentlichen API dieser Schicht sind. Die nächsthöhere Schicht darf nur über die `__init__.py` importieren (z.B. `from book.repository import BookRepository`).
 
 ## 2. Tech-Stack & Kernwerkzeuge
+* **Python**: `>=3.14` (in `pyproject.toml` unter `requires-python` festgelegt).
 * **Paket- und Projektmanager**: `uv` (Nutze ausschließlich `uv run`, `uv sync` oder `uvx` für Skripte. Kein `pip`!).
-* **Framework**: FastAPI mit Pydantic V2.
+* **Framework**: FastAPI mit Pydantic V2 + `pydantic-settings` für konfigurationsbasierte Settings-Klassen (z.B. `BaseSettings`).
+* **ASGI-Server**: `uvicorn` – Starte die Anwendung lokal mit `uv run book` (Entry-Point: `src/run.py → main()`).
 * **Database**: SQLite (3.x+) für persistente Datenspeicherung.
 * **ORM**: Pures SQLAlchemy 2.0 (Nutze zwingend `Mapped` und `mapped_column`).
-* **Formatierung & Linting**: `ruff` (`uvx ruff format` und `uvx ruff check`).
+* **Formatierung & Linting**: `ruff` (`uvx ruff format` und `uvx ruff check`). Aktive Regelsets (siehe `pyproject.toml`):
+  * `D` (Pydocstyle) – Docstrings werden erzwungen; ignoriert: `D104`, `D203`, `D212`.
+  * `FAST` – FastAPI-spezifische Best-Practices.
+  * `PT` – Pytest-spezifische Best-Practices.
+  * `B` (Bugbear), `SIM` (Simplify), `UP` (Pyupgrade), `E`/`W`/`F`/`I` (Standard-Lint + isort).
+  * **Hinweis**: `target-version = "py312"` in Ruff weicht vom `requires-python = ">=3.14"` ab — nicht ändern, bis Ruff offiziell `py314` unterstützt.
 * **Typisierung**: Stark typisiert, geprüft durch Type Hints und `ty` (`uvx ty check src tests`).
 * **Logging**: Nutze ausschließlich `loguru` (z.B. `logger.debug("...")`) für Konsolenausgaben. Keine `print()`-Statements!
 
