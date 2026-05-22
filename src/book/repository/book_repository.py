@@ -67,3 +67,41 @@ class BookRepository:
         self._session.delete(book)
         self._session.commit()
         return True
+
+    def exists_by_isbn_except_id(self, isbn: str, book_id: UUID) -> bool:
+        """
+        Check if ISBN exists on any book EXCEPT the one with given id.
+
+        Useful for update operations to detect conflicts.
+        """
+        if isbn is None:
+            return False
+        return (
+            self._session.query(BookEntity)
+            .filter(BookEntity.isbn == isbn, BookEntity.id != book_id)
+            .first()
+            is not None
+        )
+
+    def update(
+        self,
+        book_id: UUID,
+        title: str,
+        author: str,
+        isbn: str | None,
+        year: int | None,
+    ) -> BookEntity | None:
+        """
+        Update a book by id with new values.
+
+        Returns the updated BookEntity, or None if not found.
+        """
+        book = self.get_by_id(book_id)
+        if book is None:
+            return None
+        book.title = title
+        book.author = author
+        book.isbn = isbn
+        book.year = year
+        self._session.commit()
+        return book

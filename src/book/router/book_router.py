@@ -8,7 +8,12 @@ from sqlalchemy.orm import Session
 
 from book.database import get_session
 from book.repository import BookRepository
-from book.service import BookCreateRequest, BookDTO, BookService
+from book.service import (
+    BookCreateRequest,
+    BookDTO,
+    BookService,
+    BookUpdateRequest,
+)
 
 router = APIRouter(prefix="/books", tags=["Books"])
 
@@ -91,3 +96,31 @@ def delete_book(
         service.delete_book(book_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.put(
+    "/{book_id}",
+    summary="Update a book by id",
+    status_code=status.HTTP_200_OK,
+    description="Update all fields of a book by its UUID.",
+    responses={
+        200: {"description": "Book updated successfully"},
+        404: {"description": "Book not found"},
+        409: {"description": "A book with this ISBN already exists"},
+    },
+)
+def update_book(
+    book_id: UUID,
+    request: BookUpdateRequest,
+    service: Annotated[BookService, Depends(get_book_service)],
+) -> BookDTO:
+    """Update a book by its UUID and return the updated record."""
+    try:
+        return service.update_book(book_id, request)
+    except ValueError as e:
+        error_msg = str(e).lower()
+        if "not found" in error_msg:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+        if "already exists" in error_msg:
+            raise HTTPException(status_code=409, detail=str(e)) from e
+        raise HTTPException(status_code=400, detail=str(e)) from e

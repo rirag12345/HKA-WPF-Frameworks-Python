@@ -250,3 +250,146 @@ class TestDeleteBook:
         # Verify it's gone
         get_after_delete = client.get(f"/books/{book_id}")
         assert get_after_delete.status_code == 404
+
+
+class TestUpdateBook:
+    """Tests for the PUT /books/{book_id} endpoint."""
+
+    def test_updates_book_successfully(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Updating an existing book with new values must return 200."""
+        book_id = _insert_book(db_session, "Old Title", "Old Author")
+
+        payload = {
+            "title": "New Title",
+            "author": "New Author",
+            "isbn": "123-456-789",
+            "year": 2024,
+        }
+        response = client.put(f"/books/{book_id}", json=payload)
+        data = response.json()
+
+        assert response.status_code == 200
+        assert data["title"] == "New Title"
+        assert data["author"] == "New Author"
+        assert data["isbn"] == "123-456-789"
+        assert data["year"] == 2024
+
+    def test_returns_404_for_nonexistent_book_update(
+        self, client: TestClient
+    ) -> None:
+        """Updating a non-existent book must return 404."""
+        fake_id = UUID("12345678-1234-5678-1234-567812345678")
+
+        payload = {
+            "title": "Title",
+            "author": "Author",
+        }
+        response = client.put(f"/books/{fake_id}", json=payload)
+
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"].lower()
+
+    def test_updates_optional_fields(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Updating optional fields must work correctly."""
+        book_id = _insert_book(db_session, "Title", "Author")
+
+        payload = {
+            "title": "Title",
+            "author": "Author",
+            "isbn": None,
+            "year": None,
+        }
+        response = client.put(f"/books/{book_id}", json=payload)
+        data = response.json()
+
+        assert response.status_code == 200
+        assert data["isbn"] is None
+        assert data["year"] is None
+
+    def test_rejects_duplicate_isbn_on_update(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Updating a book with a duplicate ISBN must return 409."""
+        # Create two books
+        _insert_book(db_session, "Book 1", "Author 1")
+        book2_id = _insert_book(db_session, "Book 2", "Author 2")
+
+        # Create a third book with a specific ISBN via POST
+        client.post(
+            "/books/",
+            json={
+                "title": "Book X",
+                "author": "Author X",
+                "isbn": "978-0000000001",
+            },
+        )
+
+        # Try to update book2 with same ISBN
+        conflict_payload = {
+            "title": "Book 2 Updated",
+            "author": "Author 2",
+            "isbn": "978-0000000001",
+        }
+        conflict_response = client.put(
+            f"/books/{book2_id}", json=conflict_payload
+        )
+
+        assert conflict_response.status_code == 409
+        assert "already exists" in conflict_response.json()["detail"].lower()
+
+    def test_can_update_book_with_same_isbn(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """Updating a book with its own ISBN must succeed."""
+        book_id = _insert_book(db_session, "Title", "Author")
+
+        # First update with new ISBN
+        payload1 = {
+            "title": "Updated",
+            "author": "Updated",
+            "isbn": "978-1111111111",
+            "year": 2024,
+        }
+        response1 = client.put(f"/books/{book_id}", json=payload1)
+        assert response1.status_code == 200
+
+        # Update again with same ISBN (should succeed)
+        payload2 = {
+            "title": "Updated Again",
+            "author": "Updated Again",
+            "isbn": "978-1111111111",
+            "year": 2025,
+        }
+        response2 = client.put(f"/books/{book_id}", json=payload2)
+
+        assert response2.status_code == 200
+        assert response2.json()["title"] == "Updated Again"
+
+    def test_update_reflects_in_get_request(
+        self, client: TestClient, db_session: Session
+    ) -> None:
+        """After update, GET must return the new values."""
+        book_id = _insert_book(db_session, "Original", "Original Author")
+
+        # Update the book
+        payload = {
+            "title": "Updated Title",
+            "author": "Updated Author",
+            "isbn": "978-2222222222",
+            "year": 2026,
+        }
+        client.put(f"/books/{book_id}", json=payload)
+
+        # Fetch and verify
+        response = client.get(f"/books/{book_id}")
+        data = response.json()
+
+        assert data["title"] == "Updated Title"
+        assert data["author"] == "Updated Author"
+        assert data["isbn"] == "978-2222222222"
+        assert data["year"] == 2026
+

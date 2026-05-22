@@ -30,6 +30,15 @@ class BookCreateRequest(BaseModel):
     year: int | None = None
 
 
+class BookUpdateRequest(BaseModel):
+    """Request body for updating an existing book."""
+
+    title: str
+    author: str
+    isbn: str | None = None
+    year: int | None = None
+
+
 class BookService:
     """Orchestrates book-related use cases and converts entities to DTOs."""
 
@@ -84,3 +93,27 @@ class BookService:
         if not deleted:
             msg = f"Book with id {book_id} not found"
             raise ValueError(msg)
+
+    def update_book(self, book_id: UUID, request: BookUpdateRequest) -> BookDTO:
+        """
+        Update an existing book with new values.
+
+        Raises ValueError if book not found or ISBN is duplicate.
+        """
+        # Check if book exists
+        existing_book = self._repository.get_by_id(book_id)
+        if existing_book is None:
+            msg = f"Book with id {book_id} not found"
+            raise ValueError(msg)
+
+        # Check for duplicate ISBN (excluding this book itself)
+        if request.isbn and self._repository.exists_by_isbn_except_id(
+            request.isbn, book_id
+        ):
+            msg = f"A book with ISBN {request.isbn} already exists"
+            raise ValueError(msg)
+
+        updated_book = self._repository.update(
+            book_id, request.title, request.author, request.isbn, request.year
+        )
+        return BookDTO.model_validate(updated_book)
