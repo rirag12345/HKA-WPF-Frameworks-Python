@@ -24,7 +24,7 @@ _TestingSessionLocal = sessionmaker(
 )
 
 
-def _override_get_session() -> Generator[Session, None, None]:
+def _override_get_session() -> Generator[Session]:
     """Dependency override that provides a test-scoped database session."""
     with _TestingSessionLocal() as session:
         yield session
@@ -35,7 +35,7 @@ app.dependency_overrides[get_session] = _override_get_session
 
 
 @pytest.fixture
-def client() -> Generator[TestClient, None, None]:
+def client() -> Generator[TestClient]:
     """Create all tables, yield a TestClient, then tear down the schema."""
     Base.metadata.create_all(bind=_test_engine)
     with TestClient(app) as test_client:
@@ -44,7 +44,7 @@ def client() -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture
-def db_session(client: TestClient) -> Generator[Session, None, None]:  # noqa: ARG001
+def db_session(client: TestClient) -> Generator[Session]:  # noqa: ARG001
     """Yield a raw session against the test database (tables already exist)."""
     with _TestingSessionLocal() as session:
         yield session

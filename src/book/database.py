@@ -21,7 +21,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 
-def get_session() -> Generator[Session, None, None]:
+def get_session() -> Generator[Session]:
     """Yield a database session; auto-closes after the request finishes."""
     with SessionLocal() as session:
         yield session
